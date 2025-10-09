@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
 LOG_FILE = SCRIPT_DIR / "screenshot_agent.log"
-WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyvMNYEaLwVSts0CN-mc4rx0jxz92gIIqcWO_XGU8Tsj5e2PtVRn__ezHxBQNqNBw64/exec"
+WEB_APP_URL = # <-- your URL
 
 def log(msg: str):
     with open(LOG_FILE, "a") as f:

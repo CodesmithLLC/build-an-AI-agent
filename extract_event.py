@@ -6,7 +6,7 @@ from pathlib import Path
 SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
 LOG_FILE = SCRIPT_DIR / "screenshot_agent.log"
 
-OPENAI_API_KEY = "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"   # <-- your key
+OPENAI_API_KEY =    # <-- your key
 
 def log(msg: str):
     with open(LOG_FILE, "a") as f:
