@@ -1,0 +1,367 @@
+=================================
+#1 : Automator: Folder action
+=================================
+
+All UI based
+
+=================================
+#2 : Automator->Shell
+=================================
+
+/usr/bin/python3 /Users/willsentance/dev/2025/agent/screenshot_agent.py "$@" 
+
+=================================
+#3a : Python: screenshot_agent.py - log that file's received
+=================================
+
+import subprocess, pathlib, sys, datetime
+
+SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
+LOG_FILE = SCRIPT_DIR / "screenshot_agent.log"
+
+time_str = datetime.datetime.now().strftime('%-I:%M:%S %p')
+file_path = sys.argv[1] if len(sys.argv) > 1 else None
+
+def log(msg: str):
+    with open(LOG_FILE, "a") as f:
+        f.write(f"{datetime.datetime.now().strftime('%-I:%M:%S %p')} - {msg}\n")
+
+log(f"Got: {file_path}")
+
+=================================
+#3b : Python: screenshot_agent.py - launch extract_event.py file
+=================================
+
+# Run the next stage (extract_event.py) in a new subprocess
+subprocess.run([sys.executable, str(SCRIPT_DIR / "extract_event.py"), file_path or ""])
+
+=================================
+#4(a) : Python: extract_event.py - initial code
+=================================
+
+# extract_event.py
+import sys, pathlib, base64, requests, json, traceback, subprocess, time
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
+LOG_FILE = SCRIPT_DIR / "screenshot_agent.log"
+
+OPENAI_API_KEY = "sk-proj--GetKey"   # <-- your key
+
+def log(msg: str):
+    with open(LOG_FILE, "a") as f:
+        f.write(f"{datetime.now().strftime('%-I:%M:%S %p')} - {msg}\n")
+
+log(f"Ready to send with {OPENAI_API_KEY}")
+
+=================================
+#5 : OpenAI dev platform setup
+=================================
+
+///////////////////////////////////////////////////// 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
+
+
+=================================
+#4(b) : Python: extract_event.py - initial prompt (text output)
+=================================
+
+# extract_event.py
+import sys, pathlib, base64, requests, json, traceback, subprocess, time
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
+LOG_FILE = SCRIPT_DIR / "screenshot_agent.log"
+
+OPENAI_API_KEY = "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"   # <-- your key
+
+def log(msg: str):
+    with open(LOG_FILE, "a") as f:
+        f.write(f"{datetime.now().strftime('%-I:%M:%S %p')} - {msg}\n")
+
+def describe_image(file_path: Path) -> str:
+    b64 = base64.b64encode(file_path.read_bytes()).decode("utf-8")
+    ext = file_path.suffix.lower()
+    mime = "image/png" if ext == ".png" else ("image/jpeg" if ext in (".jpg",".jpeg") else "image/png")
+
+    payload = {
+        "model": "gpt-5-mini",
+        "input": [{
+            "role": "user",
+            "content": [
+                {
+                    "type": "input_text",
+                    "text": (
+                        extract_prompt
+                    )
+                },
+                {
+                    "type": "input_image",
+                    "image_url": f"data:{mime};base64,{b64}"
+                }
+            ]
+        }]
+    }
+    log(f"Sending to OpenAI {payload['model']}")
+    import traceback
+    import json
+    import requests
+
+    try:
+        r = requests.post(
+            "https://api.openai.com/v1/responses",
+            headers={
+                "Authorization": f"Bearer {OPENAI_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=90,  # images can be slow; 30s is often too tight
+        )
+        r.raise_for_status()
+        data = r.json()
+
+        # Fast path: consolidated helpers first
+        if data.get("output_text"):
+            return "".join(data["output_text"]).strip()
+
+        # Fallback: walk the structured output array
+        for part in (data.get("output") or []):
+            for chunk in part.get("content", []):
+                if chunk.get("type") in ("output_text", "summary_text"):
+                    return (chunk.get("text") or "").strip()
+
+        # Last resort: return the whole JSON as a string (useful for debugging)
+        return json.dumps(data)
+
+    except requests.Timeout as e:
+        log(f"Timeout error: {e}")
+        log(f"Payload size (bytes): {len(json.dumps(payload))}")
+        log(f"Stack trace:\n{traceback.format_exc()}")
+        return ""
+
+def main():
+    try:
+        fp = Path(sys.argv[1])
+        if not fp.exists():
+            log(f"file not found: {fp}")
+            print(f"ERROR: file not found: {fp}")
+            sys.exit(2)
+        if not OPENAI_API_KEY or OPENAI_API_KEY.startswith("sk-REPLACE"):
+            log("OPENAI_API_KEY missing/placeholder")
+            print("ERROR: OPENAI_API_KEY missing/placeholder")
+            sys.exit(1)
+        desc = describe_image(fp)
+        log(f"Image described successfully {desc}")
+        
+
+    except requests.HTTPError as e:
+        body = e.response.text[:600] if e.response is not None else ""
+        log(f"OpenAI HTTP error: {e} :: {body}")
+        print(f"ERROR: OpenAI HTTP error: {e}\n{body}")
+        sys.exit(1)
+    except Exception as e:
+        log(f"Unhandled error: {e}")
+        print("ERROR:", e)
+        print(traceback.format_exc())
+        sys.exit(1)
+
+now_utc_iso = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00","Z")
+
+extract_prompt = "Describe this image succinctly. If it looks like an event flyer, mention date, time, venue, and any RSVP/URL"
+
+if __name__ == "__main__":
+    main()
+
+=================================
+#6 : GPT-5-mini running
+=================================
+
+Screenshare logs in OpenAI platform
+
+=================================
+#4(c) : Python: extract_event.py - JSON prompt
+=================================
+
+extract_prompt = f"""
+You are an event-to-JSON parser.
+
+
+Task:
+1. Look at the attached image (it may be a flyer, invite, or schedule).
+2. If it describes an event, extract the details.
+3. If it’s not an event, return an empty JSON object:
+  {{"title": "", "start": "", "end": "", "location": "", "description": ""}}.
+
+
+OUTPUT:
+Return **JSON ONLY** (no prose) with exactly these keys:
+- title: short clear title (<= 60 chars)
+- start: ISO 8601 UTC string, e.g. 2025-08-27T12:00:00Z
+- end: ISO 8601 UTC string (must be > start)
+- location: string (venue or "Online")
+- description: brief details incl. any RSVP/URL
+
+
+Rules:
+- Assume Europe/London if timezone not stated; convert all times to UTC with 'Z' suffix.
+- If no date but a weekday is given, choose the next occurrence after today.
+- If end time is approximate or a range (e.g., "around 8–9 PM"), choose the earliest bound (here: 8 PM).
+- If only a start time is given, default end = start + 30 minutes.
+- If a duration is given ("for 90 minutes"), compute end accordingly.
+- Preserve RSVP links or URLs in the description.
+- Today (UTC) is: {now_utc_iso}.
+- Output must be valid JSON only.
+"""
+
+=================================
+#4(d) : Python: extract_event.py - improved JSON prompt
+=================================
+
+extract_prompt = f"""
+You are an event-to-JSON parser.
+
+Task:
+1) Look at the attached image (flyer/invite/schedule).
+2) If it describes an event, extract details.
+3) If not an event, return: {{"title":"","start":"","end":"","location":"","description":""}}.
+
+OUTPUT:
+Return JSON ONLY (no prose) with exactly:
+- title        : short clear title (<= 60 chars)
+- start        : ISO 8601 UTC string, e.g. 2025-08-27T12:00:00Z
+- end          : ISO 8601 UTC string (must be > start)
+- location     : string (venue or "Online")
+- description  : brief details incl. any RSVP/URL; note if end time is inferred
+
+Rules:
+- Assume Europe/London if timezone not stated; convert output to UTC with 'Z'.
+- If the date is a weekday name without a calendar date, use the next occurrence after "today".
+- If an end-time RANGE appears (e.g., "8–9 PM", "8/9pm"), choose the EARLIEST bound.
+- If a duration is explicit (e.g., "for 90 minutes"), compute end accordingly.
+- If no end is given, infer by event type (pick the single best default):
+  • "party", "birthday", "drinks", "mixer", "reception", "drop in", "open house"  → start + 3 hours  
+  • "talk", "lecture", "panel", "screening"                                       → start + 90 minutes  
+  • "meeting", "call", "office hours"                                              → start + 60 minutes  
+  • "workshop", "class", "seminar"                                                 → start + 2 hours  
+  • "day pass", "open day", "festival day"                                         → start + 8 hours
+  Phrases like "until late" → start + 4 hours.
+- Avoid crossing midnight unless text implies it; if end would pass 23:59 local, cap at 23:59 local.
+- Preserve any RSVP/URL in description. If end was inferred, append "(end time inferred)".
+
+Today (UTC) is: {now_utc_iso}.
+Output must be valid JSON only.
+"""
+
+=================================
+#4e : Python: extract_event.py - send to next file create_event.py
+=================================
+
+subprocess.run([sys.executable, str(SCRIPT_DIR / "create_event.py"), desc or ""])
+
+// And create the file create_event.py
+
+=================================
+#8a : Python: create_event.py - initial code
+=================================
+
+import requests, json, sys, pathlib
+from datetime import datetime, timedelta, timezone
+
+SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
+LOG_FILE = SCRIPT_DIR / "screenshot_agent.log"
+WEB_APP_URL = "https://script.google.com/macros/s/TBD"
+
+def log(msg: str):
+    with open(LOG_FILE, "a") as f:
+        f.write(f"{datetime.now().strftime('%-I:%M:%S %p')} - {msg}\n")
+
+def _json_only(s: str) -> dict:
+    s = s.strip()
+    # If the model wrapped JSON in code fences or added prose, try to locate the first/last braces
+    start = s.find("{")
+    end = s.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        s = s[start:end+1]
+    return json.loads(s)
+
+
+parsed_json = _json_only(sys.argv[1])
+payload = parsed_json
+
+log(f"Event {payload} ready to post to {WEB_APP_URL}")
+
+=================================
+#9 : Google Apps script platform config
+=================================
+
+1. Setup google script project
+2. Add google cal service
+
+=================================
+#8b : Python: create_event.py - full
+=================================
+
+import requests, json, sys, pathlib
+from datetime import datetime, timedelta, timezone
+
+SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
+LOG_FILE = SCRIPT_DIR / "screenshot_agent.log"
+WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyvMNYEaLwVSts0CN-mc4rx0jxz92gIIqcWO_XGU8Tsj5e2PtVRn__ezHxBQNqNBw64/exec"
+
+def log(msg: str):
+    with open(LOG_FILE, "a") as f:
+        f.write(f"{datetime.now().strftime('%-I:%M:%S %p')} - {msg}\n")
+
+def _json_only(s: str) -> dict:
+    s = s.strip()
+    # If the model wrapped JSON in code fences or added prose, try to locate the first/last braces
+    start = s.find("{")
+    end = s.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        s = s[start:end+1]
+    return json.loads(s)
+
+
+parsed_json = _json_only(sys.argv[1])
+payload = parsed_json
+
+r = requests.post(WEB_APP_URL, headers={"Content-Type": "application/json"}, data=json.dumps(payload))
+
+log(f"Event posted {r.text}")
+
+
+=================================
+#10 : Google script runtime
+=================================
+
+function doGet(e) {
+  return ContentService.createTextOutput(
+    JSON.stringify({ ok: true, msg: "GET alive" })
+  ).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents || '{}');
+    if (!data.title || !data.start || !data.end) {
+      throw new Error('Missing required fields: title, start, end');
+    }
+    var start = new Date(data.start);
+    var end   = new Date(data.end);
+
+    var cal = CalendarApp.getDefaultCalendar();
+    var event = cal.createEvent(data.title, start, end, {
+      location: data.location || '',
+      description: data.description || ''
+    });
+
+    return ContentService.createTextOutput(
+      JSON.stringify({ ok: true, id: event.getId() })
+    ).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(
+      JSON.stringify({ ok: false, error: String(err) })
+    ).setMimeType(ContentService.MimeType.JSON);
+  }
+}
