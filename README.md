@@ -1,7 +1,5 @@
 # Build An AI Agent 🤖
 
-## Welcome to the source code for Codesmith's workshop on Building an AI Agent!
-
 This repository is the contains the code used in the workshop so that, even if you haven't learned Python yet, you can code along and develop a high-level understanding of the process. We highly encourage you to take your time, pick the code apart, and unpack what's going on under the hood as well.
 
 ## Link to the workshop 🔗
@@ -11,7 +9,7 @@ This repository is the contains the code used in the workshop so that, even if y
 ## How it all works ⚙️
 
 Everything you need to run this workflow is already included.
-Each file works as is but if you’d like to follow along step-by-step with Will Sentence during the workshop, you can:
+Each file works as is but if you’d like to follow along step-by-step with Will Sentance during the workshop, you can:
 
 Remove the code from each file.
 
@@ -36,11 +34,13 @@ Before committing or pushing to GitHub, remove any hardcoded API keys or URLs! �
 
 ## Folder structure 🗂️
 
-workshop-build-ai-agent/
+```
+build-an-AI-agent/
 code_store.txt          # Contains code snippets to follow along with the workshop
 screenshot_agent.py     # Watches for new screenshots and triggers the workflow
 extract_event.py        # Sends screenshots to OpenAI to extract event details
 create_event.py         # Sends extracted event data to Google Apps Script
 screenshot_agent.log    # Records events, errors, and process updates
+```
 
-Happy coding! 
+Happy coding!

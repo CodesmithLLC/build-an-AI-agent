@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
 LOG_FILE = SCRIPT_DIR / "screenshot_agent.log"
-WEB_APP_URL = # <-- your URL
+WEB_APP_URL = "" # <-- your URL
 
 def log(msg: str):
     with open(LOG_FILE, "a") as f:
