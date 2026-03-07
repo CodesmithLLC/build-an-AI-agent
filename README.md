@@ -43,4 +43,32 @@ create_event.py         # Sends extracted event data to Google Apps Script
 screenshot_agent.log    # Records events, errors, and process updates
 ```
 
+### Note on Python packages 🐍
+
+If you encounter an error when running the project that looks like:
+
+ ```text
+ModuleNotFoundError: No module named 'requests'
+```
+
+it likely means the requests package is not installed in the Python environment that is running the script.
+
+You can install it by running:
+
+```bash
+/usr/bin/python3 -m pip install requests
+```
+
+In essence, whichever Python interpreter is running your .py files needs to have the requests package installed on it. The command above installs requests for the system Python interpreter located at /usr/bin/python3.
+
+This installs the package directly into your system’s Python environment for simplicity, so you can focus on understanding how the AI agent works rather than managing Python environments.
+
+In larger or production projects, developers typically use virtual environments to isolate dependencies and avoid conflicts between projects.
+
+If you’d like to remove the package later, you can uninstall it with:
+
+```bash
+/usr/bin/python3 -m pip uninstall requests
+````
+
 Happy coding!

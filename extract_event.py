@@ -36,9 +36,6 @@ def describe_image(file_path: Path) -> str:
         }]
     }
     log(f"Sending to OpenAI {payload['model']}")
-    import traceback
-    import json
-    import requests
 
     try:
         r = requests.post(
