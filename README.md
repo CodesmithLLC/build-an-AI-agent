@@ -71,4 +71,21 @@ If you’d like to remove the package later, you can uninstall it with:
 /usr/bin/python3 -m pip uninstall requests
 ````
 
+### VS Code Interpreter Note 📝
+
+You may also encounter issues if VS Code is not using the same Python interpreter that you installed the package on.
+
+Make sure you have the Python extension installed in VS Code.
+
+#### Then:
+
+```
+Press Cmd + Shift + P to open the Command Palette (Ctrl + Shift + P on Windows)
+
+Type Python: Select Interpreter
+
+Select /usr/bin/python3
+```
+This ensures VS Code runs your scripts using the same interpreter where the requests package was installed.
+
 Happy coding!
