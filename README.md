@@ -69,7 +69,6 @@ If you’d like to remove the package later, you can uninstall it with:
 
 ```bash
 /usr/bin/python3 -m pip uninstall requests
-````
 
 ### VS Code Interpreter Note 📝
 
